@@ -1,6 +1,3 @@
-![Alt text](image.png)
-
-
 # Structure
 
 Resources need to be contained within a resource group.
