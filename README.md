@@ -6,32 +6,29 @@ Azure had the 2nd highest market share at the close of 2022, with a share of 23%
 
 ## Advantages of cloud
 
-Adv:
+Advantages:
 
-- ONLY NEED TO PAY FOR WHAT YOU NEED! Cost savings!!!
-- Effective way of backing up data
-- Can access data on any machine, good mobility
-- Easily scalable with upgrades that allow for expansion, and scale down when demand drops
-- Secure
-- Cost savings as no need to invest or maintain hardware
-- Easy to manage cost, provided its managed properly
-- Use what you need
-- Global reach, good mobility can go global in seconds
-- Easy to keep up with market trends
-- Improved collaboration by working on the same server
-- Economy of scale, big organisations can operate on a larger scale and pass savings on to you/your business
+- OpEx over CapEx: You only pay for resources you need, over an entire physical server.
+- Can be used to back-up data.
+- Can access data on any machine, enhancing mobility.
+- Easily scalable with upgrades/downgrades to resources when needed.
+- Very secure, with correct use of security groups and keys to restrict access to specific data.
+- Enables global reach by deploying images in different regions.
+- Easy to keep up with market trends.
+- Improved collaboration by working on the same resource group on a single project.
+- Economy of scale, big organisations can operate on a larger scale and pass savings on to you/your business.
 
 Disadv:
 
-- Data held by third party, requires trust and reputation
-- Difficult to migrate from providers
-- Need internet to access data
-- Subject to data breaches
-- Can lose money if you keep paying for servers you're not using
-- limited control or customisation
-- Data laws differ by country
-- Downtime can affect business
-- Expertise needed
+- Data held by third party, requires trust and reputation.
+- Difficult to migrate from providers.
+- Need internet to access data.
+- Subject to data breaches.
+- Can lose money if you keep paying for servers you're not using.
+- limited control or customisation.
+- Data laws differ by country.
+- Downtime can affect business.
+- Expertise needed.
 
 ## Types of services offered by Azure
 
@@ -74,12 +71,6 @@ Disadv:
 - Virtual desktop infrastructure for remote working
 
 - Web app tools
-
-## How are resources structured or organised?
-
-Azure structures things in a 'tiered' system, where things in lower tiers belong to those in higher tiers. This diagram illustrates the concept.
-
-![Alt text](image-23.png)
 
 ## How a virtual machine works
 
