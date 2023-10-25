@@ -18,7 +18,7 @@ Advantages:
 - Improved collaboration by working on the same resource group on a single project.
 - Economy of scale, big organisations can operate on a larger scale and pass savings on to you/your business.
 
-Disadv:
+Disadvantages:
 
 - Data held by third party, requires trust and reputation.
 - Difficult to migrate from providers.
