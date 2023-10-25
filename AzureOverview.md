@@ -1,3 +1,8 @@
+# Overview of Azure
+
+## What's Azure's market share?
+
+
 # Structure
 
 Resources need to be contained within a resource group.
@@ -44,7 +49,9 @@ To create one...
 
 ## Making the virtual machines
 
-### Note: In an actual 2-tier virtual network, we will set up the database first. I only go over the client tier first as an example.
+### Client tier
+
+**NOTE:**: In an actual 2-tier virtual network, we will set up the database first. I only go over the client tier first as an example.
 
 5. To make an virtual machine on our virtual network, we go to virtual machines and click create dropdown and the first option.
 
@@ -89,14 +96,14 @@ To create one...
 sudo apt-get update -y
 
 # upgrade, this requires this command to do it without user input in Azure
-sudo DEBIAN_FRONTEND=noninteractive dpkg --configure -a
-sudo apt-get upgrade -y
+sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y
 
 # install nginx and sed
 sudo apt install nginx -y
 sudo apt install sed -y
 
 # clone app from repo (make specific repo for app later)
+cd /home/adminuser
 sudo -u adminuser git clone https://github.com/jbjoeburns/CI_CD.git
 
 # node js 12.x installed
@@ -112,9 +119,14 @@ sudo sed -i "s/try_files \$uri \$uri\/ =404;/proxy_pass http:\/\/localhost:3000\
 # env variable
 export DB_HOST=mongodb://<public IP for db>:27017/posts
 
-# move to app directory, restart nginx and seed db
-cd ~/CI_CD/app/app
-node seeds/seed.js
+# other packages we need
+sudo npm install express
+sudo npm install mongoose
+sudo npm install ejs
+sudo npm install faker
+
+# move to app directory + restart nginx
+cd /home/adminuser/CI_CD/app/app
 sudo systemctl restart nginx
 
 # install pm2 
@@ -122,29 +134,53 @@ sudo npm install pm2 -g
 npm install
 
 # kill, in case anything else is running
-pm2 kill
+sudo pm2 kill
 
 # start app
-pm2 start app.js
+sudo pm2 start app.js
+
+# seed db
+sudo node seeds/seed.js
 ```
 
 ![Alt text](image-13.png)
+
+- **NOTE:** It's worth mentioning that `DEBIAN_FRONTEND=noninteractive` needs to be put infront of `apt upgrade -y`. The reason for this is that a certain package installed by default in Azure requires additional configuration on install, that asks for manual user input and interrupts our upgrade progress. As we aren't using this package, we can put this option in to skip over the configuration steps avoiding the user input for increased automation.
 
 14. Go to tags tab and put in owner then our name.
 
 ![Alt text](image-14.png)
 
-Then we're done!
+Then we're done! 
 
-For the database tier we would use the following user data...
+**HOWEVER** the user data takes 5-10 mins to run in it's entirety. Give it time to install everything, and if you want to check where in the script it's up to, you can use `<package> --version` to see what has been installed so far.
+
+## Database tier
+
+The set up is almost identical to that of the client tier, with the following changes.
+
+1. In basics, choose a different availability zone, so downtime in the client tier's AZ won't affect the database tier, and vice versa.
+
+![Alt text](image-15.png)
+
+2. In networking, make sure public IP is set to none. We do not want a public IP for security reasons, making it so hackers cannot access our database easily. Additionally, we do not need one as the client tier can connect to the database tier through our VN.
+
+![Alt text](image-16.png)
+
+3. Still in networking, we want to select **advanced** under NIC network security group, then create new network security group. Then we want to add a new inbound rule with the destination port of 27017, the mongoDB port.
+
+![Alt text](image-17.png)
+
+![Alt text](image-18.png)
+
+4. Then in advanced, we use the following user data...
 
 ```
 #!/bin/bash
 
 # update/upgrade
 sudo apt update
-sudo DEBIAN_FRONTEND=noninteractive dpkg --configure -a
-sudo apt upgrade -y
+sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y
 
 # acquire key to mongodb version we want (3.2).
 wget -qO - https://www.mongodb.org/static/pgp/server-3.2.asc | sudo apt-key add -
@@ -160,7 +196,7 @@ sudo apt-get install -y mongodb-org=3.2.20 mongodb-org-server=3.2.20 mongodb-org
 sudo apt-get install -y mongodb-org=3.2.20 mongodb-org-server=3.2.20 mongodb-org-shell=3.2.20 mongodb-org-mongos=3.2.20 mongodb-org-tools=3.2.20
 
 # edit the config to define what IP we want to be able to connect to the database.
-sudo sed '24s|bindIp: 127.0.0.1/bindIp: 0.0.0.0|' /etc/mongod.conf
+sudo sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
 
 # start mongoDB.
 sudo systemctl start mongod
