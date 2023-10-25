@@ -2,6 +2,88 @@
 
 ## What's Azure's market share?
 
+Azure had the 2nd highest market share at the close of 2022, with a share of 23%.
+
+## Advantages of cloud
+
+Adv:
+
+- ONLY NEED TO PAY FOR WHAT YOU NEED! Cost savings!!!
+- Effective way of backing up data
+- Can access data on any machine, good mobility
+- Easily scalable with upgrades that allow for expansion, and scale down when demand drops
+- Secure
+- Cost savings as no need to invest or maintain hardware
+- Easy to manage cost, provided its managed properly
+- Use what you need
+- Global reach, good mobility can go global in seconds
+- Easy to keep up with market trends
+- Improved collaboration by working on the same server
+- Economy of scale, big organisations can operate on a larger scale and pass savings on to you/your business
+
+Disadv:
+
+- Data held by third party, requires trust and reputation
+- Difficult to migrate from providers
+- Need internet to access data
+- Subject to data breaches
+- Can lose money if you keep paying for servers you're not using
+- limited control or customisation
+- Data laws differ by country
+- Downtime can affect business
+- Expertise needed
+
+## Types of services offered by Azure
+
+- AI + machine learning
+
+- Data analytics services
+
+- Compute/virtual machines
+
+- Containers with Kubernetes
+
+- Pre-provided databases
+
+- Developer tools on cloud
+
+- DevOps tools for developing CI/CD pipelines
+
+- Hybrid + multicloud
+
+- Identity management for security
+
+- Cloud integration services
+
+- Automated cloud management services
+
+- Built in media player/encoder
+
+- Migration
+
+- Mixed reality/AR services
+
+- Mobile app supporting services
+
+- Networking
+
+- Security services
+
+- Storage (like buckets)
+
+- Virtual desktop infrastructure for remote working
+
+- Web app tools
+
+## How are resources structured or organised?
+
+Azure structures things in a 'tiered' system, where things in lower tiers belong to those in higher tiers. This diagram illustrates the concept.
+
+![Alt text](image-23.png)
+
+## How a virtual machine works
+
+A virtual machine is essentially an emulated computer system that uses virual equivilants of physical components (eg. CPU/storage/etc...) that allows you to run an OS that your current machine isn't using.
 
 # Structure
 
@@ -92,55 +174,44 @@ To create one...
 ```
 #!/bin/bash
 
-# update
+#update + upgrade
 sudo apt-get update -y
-
-# upgrade, this requires this command to do it without user input in Azure
 sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y
 
-# install nginx and sed
+# get nginx and sed
 sudo apt install nginx -y
 sudo apt install sed -y
 
-# clone app from repo (make specific repo for app later)
-cd /home/adminuser
-sudo -u adminuser git clone https://github.com/jbjoeburns/CI_CD.git
-
-# node js 12.x installed
-curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# install node 
-sudo npm install
-
-# rev prox
+# rev proxy setup
 sudo sed -i "s/try_files \$uri \$uri\/ =404;/proxy_pass http:\/\/localhost:3000\/;/" /etc/nginx/sites-available/default
 
-# env variable
-export DB_HOST=mongodb://<public IP for db>:27017/posts
-
-# other packages we need
-sudo npm install express
-sudo npm install mongoose
-sudo npm install ejs
-sudo npm install faker
-
-# move to app directory + restart nginx
-cd /home/adminuser/CI_CD/app/app
+# restart nginx
 sudo systemctl restart nginx
+sudo systemctl enable nginx
 
-# install pm2 
-sudo npm install pm2 -g
+# node install
+curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+sudo apt install nodejs -y
 npm install
 
-# kill, in case anything else is running
-sudo pm2 kill
+# git install 
+sudo apt install git -y
 
-# start app
-sudo pm2 start app.js
+# git clone our app
+sudo -u adminuser git clone https://github.com/jbjoeburns/CI_CD.git /home/adminuser/app
+
+# set DB HOST
+export DB_HOST=mongodb://10.0.2.4:27017/posts
 
 # seed db
-sudo node seeds/seed.js
+cd /home/adminuser/app/app/app
+npm install
+node seeds/seed.js
+
+# pm2 install
+sudo npm install pm2 -g
+
+pm2 start app.js
 ```
 
 ![Alt text](image-13.png)
@@ -193,7 +264,6 @@ sudo apt update
 
 # install mongodb
 sudo apt-get install -y mongodb-org=3.2.20 mongodb-org-server=3.2.20 mongodb-org-shell=3.2.20 mongodb-org-mongos=3.2.20 mongodb-org-tools=3.2.20
-sudo apt-get install -y mongodb-org=3.2.20 mongodb-org-server=3.2.20 mongodb-org-shell=3.2.20 mongodb-org-mongos=3.2.20 mongodb-org-tools=3.2.20
 
 # edit the config to define what IP we want to be able to connect to the database.
 sudo sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
@@ -201,7 +271,44 @@ sudo sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
 # start mongoDB.
 sudo systemctl start mongod
 sudo systemctl enable mongod
-
-# check its working
-sudo systemctl status mongod
 ```
+
+# Improve security with networking
+
+### We can further improve the security of our database by changing the networking settings.
+
+The way Azure works is that network settings (security groups) function on a priority system, and will allow for all connections unless told otherwise. Smallest priority numbers are done first.
+
+For example...
+
+![Alt text](image-19.png)
+
+This image shows a total of 5 rules, ordered from top to bottom in priority.
+
+1. Azure will check if it's an SSH connection (through port 22).
+2. Then it will check if it is a connection through the MongoDB port 27017.
+3. Next, it will allow any connections through any ports, provided it is an internal connection from a **source** in the virtual network to another **destination** in the same network.
+4. If those aren't passed, it will then allow the connection provided the source is from the internal AzureLoadBalancer.
+5. Finally, **the most important rule** if the previous rules fail, then any connection through any port is to be denied.
+
+We can add new rules with the add rule button, and define their priority.
+
+We can also edit rules by double clicking a rule without making a new instance. For example, our MongoDB rule will allow all connections, lets change this to just allow our app instance.
+
+For example, we can change the source to the CIDR range of our client tier.
+
+![Alt text](image-20.png)
+
+### We can also remove accidently associated public IPs
+
+If we associate our database tier a public IP by accident, we dont need to create an entirely new instance. However, we can't simply delete the IP, we need to dissociate it with our NIC first, or we'll be told that deletion is not possible.
+
+1. We can just search up the IP on the 'all resources' page.
+
+![Alt text](image-21.png)
+
+2. Then click on it, and click dissociate.
+
+![Alt text](image-22.png)
+
+3. Now we can safely delete this IP.
