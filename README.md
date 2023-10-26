@@ -97,6 +97,7 @@ Each of these layers is called a **scope**.
   - CIDR blocks are called IPv4 address space
   - Instances are called Virtual machines
   - AMIs are called images
+  - Buckets are called containers
 
 - Availability Zones
   - Azure has maximum of 3 AZs per region, where AWS can have more depending on the region
@@ -189,13 +190,13 @@ npm install
 sudo apt install git -y
 
 # git clone our app
-sudo -u adminuser git clone https://github.com/jbjoeburns/CI_CD.git /home/adminuser/app
+sudo -u adminuser git clone https://github.com/jbjoeburns/CI_CD.git 
 
 # set DB HOST
 export DB_HOST=mongodb://10.0.2.4:27017/posts
 
 # seed db
-cd /home/adminuser/app/app/app
+cd app/app/app
 npm install
 node seeds/seed.js
 
@@ -303,3 +304,47 @@ If we associate our database tier a public IP by accident, we dont need to creat
 ![Alt text](image-22.png)
 
 3. Now we can safely delete this IP.
+
+# Blob storage
+
+### What is blob storage?
+
+A blob consists of stored unstructured data we can pull for use on azure machines.
+
+You need both a storage account, then a container for your blobs, before you can make any blobs themselves. The storage account belongs to a resource group.
+
+![Alt text](image-24.png)
+
+Containers have tiers depending on how frequently they're accessed with, from most accessed to least, they go...
+
+Hot -> Cool -> Archival
+
+The pricing structure for these varies, with hot being cheaper to access, but costing more to keep over a longer period of time. While archival costs a lot of money to access the files, but can be kept to store files for very little money over a long period of time.
+
+Pricing can be further managed by determining if LRS or ZRS is more appropriate for your use.
+- LRS: Locally redundant storage. This copies your containers 3 times within a single AZ. This provides backups, but if the zone goes down then the data is inaccessable.
+- ZRS: Zone redundant storage. Same as LRS but instead each of the 3 copies is located on a different AZ, making it so downtime in one AZ won't affect access to your containers on the other AZs.
+
+Like with AWS, we need to use a CLI specific for the cloud service we're using to interact with buckets. This is the command to install AzureCLI:
+`curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash`
+
+### Blocker: App is running in the background from launching it with user data, but we want to stop the process to relaunch the app
+
+As the app takes up port 3000, we need to stop it before starting any new app instances. However, as the app was launched by the root user (the user that user data is executed as) we don't see it on `pm2 list` or `top`.
+
+The way we can overcome this is by specifically searching for the process, under all users.
+
+We can do this with `ps aux`.
+- `ps` shows running processes
+- `a` option shows processes from *all* users
+- `u` will show what user ran the process
+- `x` will also show processes that aren't attached to a terminal
+
+However, this shows a lot of processes, so to narrow down the ones we're interested in, we can use `grep`.
+
+`grep` will search for keywords
+- eg. `ps aux | grep pm2`
+- This will show all processes containing the word 'pm2', and we're specifically interested in the one ran by the root user
+- Then we can kill the process with `sudo kill <PID>`
+- pm2 will re-run the process if we kill node, so that's why pm2 is killed instead
+
