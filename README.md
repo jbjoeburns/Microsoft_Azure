@@ -322,8 +322,13 @@ Hot -> Cool -> Archival
 The pricing structure for these varies, with hot being cheaper to access, but costing more to keep over a longer period of time. While archival costs a lot of money to access the files, but can be kept to store files for very little money over a long period of time.
 
 Pricing can be further managed by determining if LRS or ZRS is more appropriate for your use.
-- LRS: Locally redundant storage. This copies your containers 3 times within a single AZ. This provides backups, but if the zone goes down then the data is inaccessable.
-- ZRS: Zone redundant storage. Same as LRS but instead each of the 3 copies is located on a different AZ, making it so downtime in one AZ won't affect access to your containers on the other AZs.
+- LRS: Locally redundant storage. This copies your containers 3 times within a single AZ. This provides backups, but if the zone goes down then the data is inaccessable. **Cheaper**.
+
+![Alt text](image-25.png)
+
+- ZRS: Zone redundant storage. Same as LRS but instead each of the 3 copies is located on a different AZ, making it so downtime in one AZ won't affect access to your containers on the other AZs. **More expensive**.
+
+![Alt text](image-26.png)
 
 Like with AWS, we need to use a CLI specific for the cloud service we're using to interact with buckets. This is the command to install AzureCLI:
 `curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash`
