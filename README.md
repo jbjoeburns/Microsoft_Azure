@@ -190,7 +190,7 @@ npm install
 sudo apt install git -y
 
 # git clone our app
-sudo -u adminuser git clone https://github.com/jbjoeburns/CI_CD.git 
+sudo -u adminuser git clone https://github.com/jbjoeburns/CI_CD.git app
 
 # set DB HOST
 export DB_HOST=mongodb://10.0.2.4:27017/posts
@@ -333,6 +333,8 @@ Pricing can be further managed by determining if LRS or ZRS is more appropriate 
 Like with AWS, we need to use a CLI specific for the cloud service we're using to interact with buckets. This is the command to install AzureCLI:
 `curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash`
 
+And to login to AzureCLI you use: `az login` and follow the steps provided by AzureCLI.
+
 ### Blocker: App is running in the background from launching it with user data, but we want to stop the process to relaunch the app
 
 As the app takes up port 3000, we need to stop it before starting any new app instances. However, as the app was launched by the root user (the user that user data is executed as) we don't see it on `pm2 list` or `top`.
@@ -353,3 +355,64 @@ However, this shows a lot of processes, so to narrow down the ones we're interes
 - Then we can kill the process with `sudo kill <PID>`
 - pm2 will re-run the process if we kill node, so that's why pm2 is killed instead
 
+# Script to download image from blob, then add image to app
+
+Remember to install and login to AzureCLI before running this!
+
+`curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash`
+
+You need to have the right role for containers and blob storage, or you cannot access it. It's essentially the permissions to access a blob storage container. This is pre-assigned for us, but usually we'd have to assign it ourselves with:
+
+```
+az ad signed-in-user show --query id -o tsv | az role assignment create \
+    --role "Storage Blob Data Contributor" \
+    --assignee @- \
+    --scope "/subscriptions/<subscription>/resourceGroups/<resource-group>/providers/Microsoft.Storage/storageAccounts/<storage-account>"
+```
+
+Now, the script:
+
+use-blob-on-homepage.sh
+
+```
+#!/bin/bash
+
+# Moves to our app folder
+cd /app/app/app
+
+# Creates storage account
+az storage account create --name tech254joestorage --resource-group tech254 --location uksouth --sku Standard_ZRS
+
+# Creates container (include --public-access blob to make blob public)
+az storage container create --account-name tech254joestorage --name tech254joecontainer --auth-mode login --public-access blob
+
+# Downloads the cat image
+curl -o cat.jpg https://pbs.twimg.com/media/FJxt5B9VUAALRka.jpg
+
+# Uploads the cat image to container
+az storage blob upload --account-name tech254joestorage --container-name tech254joecontainer --name cat.jpg --file cat.jpg --auth-mode login
+
+# Removes cat image locally
+sudo rm cat.jpg
+
+# Uses sed to add cat.jpg blob URL as image to HTML file
+sudo sed -i 's|</h2>|</h2><img src="https://tech254joestorage.blob.core.windows.net/tech254joecontainer/cat.jpg">|' ~/app/app/app/views/index.ejs
+
+# Stops app (if running) then starts it
+pm2 kill
+pm2 start app.js
+```
+
+Other useful commands:
+
+List blobs on storage
+
+```
+az storage blob list --account-name <storage-account> --container-name <container> --output table --auth-mode login
+```
+
+Download a blob
+
+```
+az storage blob download --account-name <storage-account> --container-name <container> --name myFile.txt --file <~/destination/path/for/file> --auth-mode login
+```
